@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10131c">
+<title>AI Video Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#10131c;color:#f5f6ff;
+font:16px Arial,sans-serif;padding:20px}
+header{padding:12px 0 22px}
+h1{font-size:27px;margin-bottom:8px}
+p{color:#b9bfd2;line-height:1.5}
+.card{background:#1b2030;border:1px solid #30384c;
+border-radius:16px;padding:16px;margin:14px 0}
+label{display:block;margin:15px 0 8px;font-weight:bold}
+select,input,textarea,button{
+width:100%;padding:13px;border-radius:10px;
+border:1px solid #414b63;background:#111725;
+color:white;font-size:15px}
+input[type=file]{padding:10px}
+textarea{min-height:100px;resize:vertical}
+button{background:#8172ff;border:0;font-weight:bold;
+margin-top:16px;cursor:pointer}
+.preview{max-width:100%;max-height:300px;
+display:block;margin-top:12px;border-radius:10px}
+.small{font-size:13px;color:#b9bfd2}
+#status{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header>
+  <h1>✨ AI Video Studio</h1>
+  <p>Foto ke video · Face swap · Karakter konsisten</p>
+  <p class="small">Gunakan foto dan wajah yang Anda miliki
+  atau yang telah mendapat izin pemiliknya.</p>
+</header>
+
+<section class="card">
+  <h2>1. Pilih fitur</h2>
+  <label for="mode">Mode AI</label>
+  <select id="mode">
+    <option value="photo">Foto menjadi video</option>
+    <option value="swap">Face swap video</option>
+    <option value="character">Karakter konsisten</option>
+  </select>
+
+  <label for="photo">Foto wajah / karakter</label>
+  <input id="photo" type="file" accept="image/*">
+  <img id="photoPreview" class="preview" hidden>
+
+  <label for="video">Video referensi (opsional)</label>
+  <input id="video" type="file" accept="video/*">
+  <video id="videoPreview" class="preview"
+  controls playsinline hidden></video>
+</section>
+
+<section class="card">
+  <h2>2. Atur hasil video</h2>
+  <label for="prompt">Prompt gerakan</label>
+  <textarea id="prompt"
+  placeholder="Contoh: karakter tersenyum, menoleh perlahan, pencahayaan sinematik..."></textarea>
+
+  <label for="duration">Durasi target</label>
+  <select id="duration">
+    <option>3 detik</option>
+    <option>5 detik</option>
+    <option>10 detik</option>
+  </select>
+
+  <label>
+    <input id="consent" type="checkbox"
+    style="width:auto">
+    Saya memiliki izin menggunakan materi ini.
+  </label>
+
+  <button id="generate">Siapkan proyek</button>
+  <p id="status" aria-live="polite">
+    Belum ada proyek yang disiapkan.
+  </p>
+</section>
+
+<script>
+const photo = document.getElementById("photo");
+const video = document.getElementById("video");
+const status = document.getElementById("status");
+
+function previewFile(input, target, isVideo) {
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    target.src = url;
+    target.hidden = false;
+    if (isVideo) target.load();
+  });
+}
+
+previewFile(photo, document.getElementById("photoPreview"), false);
+previewFile(video, document.getElementById("videoPreview"), true);
+
+document.getElementById("generate").onclick = () => {
+  const mode = document.getElementById("mode").value;
+  const image = photo.files[0];
+  const clip = video.files[0];
+  const prompt = document.getElementById("prompt").value.trim();
+
+  if (!document.getElementById("consent").checked) {
+    status.textContent = "Konfirmasikan izin penggunaan materi.";
+    return;
+  }
+  if (!image) {
+    status.textContent = "Pilih foto terlebih dahulu.";
+    return;
+  }
+  if (mode === "swap" && !clip) {
+    status.textContent = "Face swap memerlukan video referensi.";
+    return;
+  }
+
+  const project = {
+    mode,
+    photoName: image.name,
+    videoName: clip ? clip.name : null,
+    prompt,
+    duration: document.getElementById("duration").value
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(project, null, 2)],
+    {type: "application/json"}
+  );
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "proyek-ai-video.json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+
+  status.textContent =
+    "Data proyek berhasil disiapkan. " +
+    "Generasi AI belum aktif; mesin pemrosesan perlu dihubungkan.";
+};
+</script>
+</body>
+</html>
